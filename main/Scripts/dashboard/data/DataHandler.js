@@ -86,11 +86,45 @@
     }
     // remove internal-only fields (like id) before exporting; include username and section
     const exportKeys = ['fullname', 'username', 'section', 'timeIn', 'timeOut', 'status'];
+    function _formatHumanTime(raw) {
+      if (raw === null || raw === undefined || raw === '') return '';
+      try {
+        const d = new Date(raw);
+        if (!Number.isNaN(d.getTime())) {
+          const hh = d.getHours();
+          const mm = String(d.getMinutes()).padStart(2, '0');
+          const ss = String(d.getSeconds()).padStart(2, '0');
+          const am = hh < 12;
+          let h12 = hh % 12;
+          if (h12 === 0) h12 = 12;
+          const hStr = String(h12).padStart(2, '0');
+          return `${hStr}:${mm}:${ss}${am ? 'AM' : 'PM'}`;
+        }
+      } catch (e) { /* fallthrough to regex parse */ }
+      // fallback: extract hh:mm(:ss) from string
+      try {
+        const m = String(raw).match(/([0-9]{1,2}):([0-9]{2})(?::([0-9]{2}))?/);
+        if (m) {
+          const hh = Number(m[1]);
+          const mm = String(m[2]).padStart(2, '0');
+          const ss = String(m[3] || '00').padStart(2, '0');
+          const am = hh < 12;
+          let h12 = hh % 12;
+          if (h12 === 0) h12 = 12;
+          const hStr = String(h12).padStart(2, '0');
+          return `${hStr}:${mm}:${ss}${am ? 'AM' : 'PM'}`;
+        }
+      } catch (e) { /* ignore */ }
+      return String(raw).trim();
+    }
+
     const newData = (Array.isArray(data) ? data : []).map(row => {
       const out = {};
       for (const k of exportKeys) {
-        if (Object.prototype.hasOwnProperty.call(row, k)) out[k] = row[k];
-        else out[k] = '';
+        if (Object.prototype.hasOwnProperty.call(row, k)) {
+          if (k === 'timeIn' || k === 'timeOut') out[k] = _formatHumanTime(row[k]);
+          else out[k] = row[k];
+        } else out[k] = '';
       }
       return out;
     });
@@ -119,7 +153,7 @@
   }
 
   // collector for arbitrary tbody (calendar date view export)
-  function collectRowsDataFor(tbodySelector, ids) {
+  function collectRowsDataCALENDAR(tbodySelector, ids) {
     const rows = [];
     const tbody = document.querySelector(tbodySelector);
     if (!tbody) return rows;
@@ -139,16 +173,34 @@
       let timeIn = '';
       let timeOut = '';
       try {
-        const timeCell = tr.querySelector('.time-cell') || tr.children[tr.children.length - 1];
-        const timeText = timeCell ? (timeCell.textContent || '').trim() : '';
-        const mIn = timeText.match(/IN[:\s]*([0-9:\sAPMapm]+)/i);
-        const mOut = timeText.match(/OUT[:\s]*([0-9:\sAPMapm]+)/i);
-        if (mIn) timeIn = mIn[1].trim();
-        if (mOut) timeOut = mOut[1].trim();
-        if (!timeIn && !timeOut && timeText) {
-          const parts = timeText.split(/\s*[\/\-,]\s*/).map(s => s.trim()).filter(Boolean);
-          if (parts.length === 2) { timeIn = parts[0]; timeOut = parts[1]; }
-          else if (parts.length === 1) { timeIn = parts[0]; }
+        // prefer explicit dataset values set by calendarAttendance (timeIn/timeOut raw)
+        if (tr.dataset && (tr.dataset.timeIn || tr.dataset.timeOut)) {
+          timeIn = tr.dataset.timeIn ? String(tr.dataset.timeIn).trim() : '';
+          timeOut = tr.dataset.timeOut ? String(tr.dataset.timeOut).trim() : '';
+        } else {
+          // prefer separate cells if present (calendar view renders .time-in-cell and .time-out-cell)
+          const inCell = tr.querySelector('.time-in-cell');
+          const outCell = tr.querySelector('.time-out-cell');
+          if (inCell || outCell) {
+            timeIn = inCell ? (inCell.textContent || '').trim() : '';
+            timeOut = outCell ? (outCell.textContent || '').trim() : '';
+            // strip common labels if they exist
+            timeIn = timeIn.replace(/^(?:Time In[:\s]*)/i, '').trim();
+            timeOut = timeOut.replace(/^(?:Time Out[:\s]*)/i, '').trim();
+          } else {
+            // fallback: parse combined time cell text (IN:/OUT: or slash-separated)
+            const timeCell = tr.querySelector('.time-cell') || tr.children[tr.children.length - 1];
+            const timeText = timeCell ? (timeCell.textContent || '').trim() : '';
+            const mIn = timeText.match(/IN[:\s]*([0-9:\sAPMapm]+)/i);
+            const mOut = timeText.match(/OUT[:\s]*([0-9:\sAPMapm]+)/i);
+            if (mIn) timeIn = mIn[1].trim();
+            if (mOut) timeOut = mOut[1].trim();
+            if (!timeIn && !timeOut && timeText) {
+              const parts = timeText.split(/\s*[\/\-,]\s*/).map(s => s.trim()).filter(Boolean);
+              if (parts.length === 2) { timeIn = parts[0]; timeOut = parts[1]; }
+              else if (parts.length === 1) { timeIn = parts[0]; }
+            }
+          }
         }
       } catch (e) { timeIn = ''; timeOut = ''; }
 
@@ -354,7 +406,7 @@
         if (!specTbody) { showNotice('No data', 'No attendance data available for the selected date'); return; }
 
         // collect rows from tbody and only include visible rows
-        let rows = collectRowsDataFor('#attendance-specDate-tbody');
+        let rows = collectRowsDataCALENDAR('#attendance-specDate-tbody');
         try {
           rows = (rows || []).filter(r => {
             try {

@@ -1,6 +1,6 @@
 # PRIVACY & DATA HANDLING — QRttendX
 
-QR Attendy processes attendance-related data which may include student names, IDs, timestamps, and device identifiers.
+QRttendX processes attendance-related data which may include student names, IDs, timestamps, and device identifiers.
 
 ## Recommendations for deployers
 - Only collect the minimum data required for attendance tracking.

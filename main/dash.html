@@ -25,6 +25,9 @@
   <!-- END OF window controls -->
   <!--END Custom Title Bar (ELECTRON)-->
 
+  <!-- =============================================================================== -->
+
+  <!-- Teacher main -->
   <main id="teacher-main">
     <!-- START OF side left navigation bar continer -->
     <nav id="side-bar">
@@ -130,7 +133,6 @@
       </ul>
     </nav>
     <!-- END OF side left navigation bar continer -->
-
 
     <!-- START OF dashboard container -->
     <section class="dashboard-container">
@@ -559,8 +561,12 @@
   </main>
   <!-- END OF TEACHER MAIN -->
 
+  <!-- =============================================================================== -->
+
+
   <!-- START OF STUDENT MAIN -->
   <main id="student-main">
+    <!-- START OF side left navigation bar continer -->
     <nav id="side-bar">
       <ul>
         <li>
@@ -731,9 +737,6 @@
         <label for="edit-student-username">Username:</label>
         <input type="text" id="edit-student-username" name="edit-student-username" required>
 
-        <label for="edit-student-time-in">Time In</label>
-        <input type="time" id="edit-student-time-in" name="edit-student-time-in">
-
         <label for="edit-student-time-out">Time Out</label>
         <input type="time" id="edit-student-time-out" name="edit-student-time-out">
 
@@ -758,6 +761,40 @@
 
         <div class="form-actions">
           <button type="button" id="cancel-edit-student">Cancel</button>
+          <button type="submit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Multi-edit Panel -->
+  <div class="edit-multi-student-panel">
+    <div class="edit-multi-student-card">
+      <form action="submit" id="edit-multi-student-form">
+        <label for="">Time Out:</label>
+        <input type="time" name="edit-multi-student-time-out" id="edit-multi-student-time-out">
+
+        <label for="edit-multi-student-status">Status:</label>
+        <div class="select-container">
+          <select id="edit-multi-student-status" name="edit-multi-student-status" class="select-box-status">
+            <option value="Present">Present</option>
+            <option value="Late">Late</option>
+            <option value="Absent">Absent</option>
+            <option value="Excused">Excused</option>
+          </select>
+        </div>
+
+        <label for="edit-multi-student-section">Section:</label>
+        <div class="select-container">
+          <select name="section-attendance-edit" class="select-box-edit">
+            <option value="new">New Section</option>
+
+          </select>
+        </div>
+        <input type="text" id="edit-multi-student-section" name="edit-multi-student-section" required>
+
+        <div class="form-actions">
+          <button type="button" id="cancel-edit-multi-student">Cancel</button>
           <button type="submit">Save Changes</button>
         </div>
       </form>

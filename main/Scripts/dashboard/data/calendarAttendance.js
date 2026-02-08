@@ -203,16 +203,44 @@ async function renderSelectedDateAttendance(dateInput) {
         // username if present on record
         const username = r.username || r.user || r.student_username || r.student_id || '';
 
-        // format for display
+        // format for display as 12-hour HH:MM:SSAM/PM (no space)
         function fmtTime(raw) {
           if (!raw && raw !== 0) return '';
           try {
             const d = _parseDateFlexible(raw);
             if (d && !Number.isNaN(d.getTime())) {
-              return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+              const hh = d.getHours();
+              const mm = String(d.getMinutes()).padStart(2, '0');
+              const ss = String(d.getSeconds()).padStart(2, '0');
+              const am = hh < 12;
+              let h12 = hh % 12; if (h12 === 0) h12 = 12;
+              const hStr = String(h12);
+              return `${hStr}:${mm}:${ss}${am ? 'AM' : 'PM'}`;
             }
           } catch (e) { /* ignore */ }
-          return String(raw || '').trim();
+          // fallback: try to parse an existing time-like string
+          const s = String(raw || '').trim();
+          try {
+            const m = s.match(/([0-9]{1,2}):([0-9]{2})(?::([0-9]{2}))?\s*(AM|PM)?/i);
+            if (m) {
+              let hh = Number(m[1]);
+              const mm = String(m[2]).padStart(2, '0');
+              const ss = String(m[3] || '00').padStart(2, '0');
+              const period = m[4];
+              if (period) {
+                const am = /^AM$/i.test(period);
+                let h12 = hh % 12; if (h12 === 0) h12 = 12;
+                const hStr = String(h12);
+                return `${hStr}:${mm}:${ss}${am ? 'AM' : 'PM'}`;
+              } else {
+                const am = hh < 12;
+                let h12 = hh % 12; if (h12 === 0) h12 = 12;
+                const hStr = String(h12);
+                return `${hStr}:${mm}:${ss}${am ? 'AM' : 'PM'}`;
+              }
+            }
+          } catch (e) { /* ignore */ }
+          return s;
         }
 
         const timeIn = fmtTime(timeInRaw);
@@ -233,10 +261,7 @@ async function renderSelectedDateAttendance(dateInput) {
           `<td class="section-cell">${_escapeHtml(section)}</td>` +
           `<td class="status-text">${_escapeHtml(status)}</td>` +
           `<td class="time-in-cell">${_escapeHtml(timeIn)}</td>` +
-          `<td class="time-out-cell">${_escapeHtml(timeOut)}<select class="times-select" style="display:none">` +
-          `<option value="${_escapeHtml(timeInRaw)}">Time In: ${_escapeHtml(timeIn)}</option>` +
-          `<option value="${_escapeHtml(timeOutRaw)}">Time Out: ${_escapeHtml(timeOut)}</option>` +
-          `</select></td>`;
+          `<td class="time-out-cell">${_escapeHtml(timeOut)}</td>`;
         tbody.appendChild(tr);
       }
     }

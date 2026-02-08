@@ -24,10 +24,10 @@ function _buildRowHtml(r) {
     <label for="row-select-${r.id}">
     <tr data-id="${r.id}" data-username="${(r.student_username || r.username || '')}" data-section="${rowSection}">
       <td class="row-checkbox-cell"><input id="row-select-${r.id}" type="checkbox" class="row-select" data-id="${r.id}"></td>
-      <td>${fullname}</td>
-      <td>${timestampIN ? _formatTime(timestampIN) : 'Not Set'}</td>
-      <td>${timestampOUT || 'Not Set'}</td>
-      <td>
+      <td class="fullname-cell">${fullname}</td>
+      <td class="time-in-cell">${timestampIN ? _formatTime(timestampIN) : 'Not Set'}</td>
+      <td class="time-out-cell">${timestampOUT || 'Not Set'}</td>
+      <td class="status-cell">
         <select class="status-select">
           <option value="Present" ${status === 'Present' ? 'selected' : ''}>Present</option>
           <option value="Late" ${status === 'Late' ? 'selected' : ''}>Late</option>
