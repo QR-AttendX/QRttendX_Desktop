@@ -5,157 +5,55 @@
     return checked.map(cb => Number(cb.getAttribute('data-id'))).filter(Boolean);
   }
 
-  function collectRowsData(ids) {
+  function collectRowsDataATTENDANCE(ids) {
     const rows = [];
-    const trs = ids && ids.length ? Array.from(document.querySelectorAll('#attendance-tbody tr')).filter(tr => ids.includes(Number(tr.getAttribute('data-id')))) : Array.from(document.querySelectorAll('#attendance-tbody tr'));
+    const tbody = document.getElementById('attendance-tbody');
+    if (!tbody) return rows;
+    const trs = ids && ids.length ? Array.from(tbody.querySelectorAll('tr')).filter(tr => ids.includes(Number(tr.getAttribute('data-id')))) : Array.from(tbody.querySelectorAll('tr'));
     for (const tr of trs) {
       const id = Number(tr.getAttribute('data-id')) || '';
-
-      // Determine fullname cell robustly (different view builders use slightly different td structures)
       let fullname = '';
       try {
-        const tds = Array.from(tr.querySelectorAll('td'));
-        for (const td of tds) {
-          // skip checkbox cell
-          if (td.querySelector('.row-select')) continue;
-          // skip meta/avatar cell
-          if (td.classList && td.classList.contains('meta-cell')) continue;
-          // skip times cell (may contain .times-select or label like "IN:" or "OUT:")
-          if (td.querySelector('.times-select')) continue;
-          const txt = (td.textContent || '').trim();
-          if (/\bIN[: ]|OUT[: ]|Time In[: ]|Time Out[: ]/i.test(txt)) continue;
-          // skip status select cell
-          if (td.querySelector('.status-select')) continue;
-          if (txt) { fullname = txt; break; }
-        }
-        // fallback to known index positions
-        if (!fullname) {
-          if (tr.children[2] && tr.children[2].textContent) fullname = tr.children[2].textContent.trim();
-          else if (tr.children[1] && tr.children[1].textContent) fullname = tr.children[1].textContent.trim();
-        }
-      } catch (e) { fullname = (tr.children[2] && tr.children[2].textContent || '').trim(); }
+        const el = tr.querySelector('.fullname-cell');
+        fullname = el ? (el.textContent || '').trim() : ((tr.children[1] && tr.children[1].textContent) ? tr.children[1].textContent.trim() : '');
+      } catch (e) { fullname = ((tr.children[1] && tr.children[1].textContent) ? tr.children[1].textContent.trim() : ''); }
 
-      // times: try .times-select first, otherwise parse IN/OUT lines
+      // username / section from dataset or cells
+      let username = '';
+      try { username = tr.dataset && tr.dataset.username ? String(tr.dataset.username).trim() : (tr.querySelector('.username-cell') ? (tr.querySelector('.username-cell').textContent || '').trim() : ''); } catch (e) { username = ''; }
+      let section = '';
+      try { section = tr.dataset && tr.dataset.section ? String(tr.dataset.section).trim() : (tr.querySelector('.section-cell') ? (tr.querySelector('.section-cell').textContent || '').trim() : ''); } catch (e) { section = ''; }
+
+      // times: prefer dataset.timeIn/timeOut if present, otherwise text from .time-in-cell/.time-out-cell
       let timeIn = '';
       let timeOut = '';
       try {
-        const sel = tr.querySelector('.times-select');
-        if (sel) {
-          const opt0 = sel.options[0] && sel.options[0].textContent || '';
-          const opt1 = sel.options[1] && sel.options[1].textContent || '';
-          timeIn = opt0.replace(/^\s*Time In:\s*/i, '').trim();
-          timeOut = opt1.replace(/^\s*Time Out:\s*/i, '').trim();
+        if (tr.dataset && (tr.dataset.timeIn || tr.dataset.timeOut)) {
+          timeIn = tr.dataset.timeIn ? String(tr.dataset.timeIn).trim() : '';
+          timeOut = tr.dataset.timeOut ? String(tr.dataset.timeOut).trim() : '';
         } else {
-          // parse text content for lines like "IN: 9:15:51AM" and "OUT: 9:30:00AM"
-          const txt = (tr.textContent || '').replace(/\s+/g, ' ');
-          const mIn = txt.match(/IN[: ]\s*([0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?\s*(?:AM|PM)?)/i);
-          const mOut = txt.match(/OUT[: ]\s*([0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?\s*(?:AM|PM)?)/i);
-          if (mIn) timeIn = mIn[1].replace(/\s+/g, '');
-          if (mOut) timeOut = mOut[1].replace(/\s+/g, '');
+          const inCell = tr.querySelector('.time-in-cell');
+          const outCell = tr.querySelector('.time-out-cell');
+          timeIn = inCell ? (inCell.textContent || '').trim() : '';
+          timeOut = outCell ? (outCell.textContent || '').trim() : '';
+          // remove placeholder text
+          if (/^Not Set$/i.test(timeIn)) timeIn = '';
+          if (/^Not Set$/i.test(timeOut)) timeOut = '';
         }
-      } catch (e) { /* ignore */ }
+      } catch (e) { timeIn = ''; timeOut = ''; }
 
       const statusEl = tr.querySelector('.status-select');
-      const status = statusEl ? statusEl.value : (tr.querySelector('.status-text') && tr.querySelector('.status-text').textContent || (tr.children[tr.children.length - 1] && tr.children[tr.children.length - 1].textContent) || '').trim();
-
-      // username: prefer data-username attribute, then .username-cell text, otherwise blank
-      let username = '';
-      try {
-        if (tr.dataset && tr.dataset.username) username = String(tr.dataset.username).trim();
-        else if (tr.querySelector('.username-cell')) username = String(tr.querySelector('.username-cell').textContent || '').trim();
-        else username = '';
-      } catch (e) { username = ''; }
-
-      // section: prefer data-section attribute, then .section-cell text, otherwise empty
-      let section = '';
-      try {
-        if (tr.dataset && tr.dataset.section) section = String(tr.dataset.section).trim();
-        else if (tr.querySelector('.section-cell')) section = String(tr.querySelector('.section-cell').textContent || '').trim();
-        else section = '';
-      } catch (e) { section = '' }
+      const status = statusEl ? (statusEl.value || '').trim() : (tr.querySelector('.status-text') ? (tr.querySelector('.status-text').textContent || '').trim() : '');
 
       rows.push({ id, fullname, username, section, timeIn, timeOut, status });
     }
     return rows;
   }
 
-  async function downloadAsXlsx(data, filename = 'attendance.xlsx') {
-    if (typeof XLSX === 'undefined') {
-      console.error('XLSX library not found');
-      return;
-    }
-    // remove internal-only fields (like id) before exporting; include username and section
-    const exportKeys = ['fullname', 'username', 'section', 'timeIn', 'timeOut', 'status'];
-    function _formatHumanTime(raw) {
-      if (raw === null || raw === undefined || raw === '') return '';
-      try {
-        const d = new Date(raw);
-        if (!Number.isNaN(d.getTime())) {
-          const hh = d.getHours();
-          const mm = String(d.getMinutes()).padStart(2, '0');
-          const ss = String(d.getSeconds()).padStart(2, '0');
-          const am = hh < 12;
-          let h12 = hh % 12;
-          if (h12 === 0) h12 = 12;
-          const hStr = String(h12).padStart(2, '0');
-          return `${hStr}:${mm}:${ss}${am ? 'AM' : 'PM'}`;
-        }
-      } catch (e) { /* fallthrough to regex parse */ }
-      // fallback: extract hh:mm(:ss) from string
-      try {
-        const m = String(raw).match(/([0-9]{1,2}):([0-9]{2})(?::([0-9]{2}))?/);
-        if (m) {
-          const hh = Number(m[1]);
-          const mm = String(m[2]).padStart(2, '0');
-          const ss = String(m[3] || '00').padStart(2, '0');
-          const am = hh < 12;
-          let h12 = hh % 12;
-          if (h12 === 0) h12 = 12;
-          const hStr = String(h12).padStart(2, '0');
-          return `${hStr}:${mm}:${ss}${am ? 'AM' : 'PM'}`;
-        }
-      } catch (e) { /* ignore */ }
-      return String(raw).trim();
-    }
-
-    const newData = (Array.isArray(data) ? data : []).map(row => {
-      const out = {};
-      for (const k of exportKeys) {
-        if (Object.prototype.hasOwnProperty.call(row, k)) {
-          if (k === 'timeIn' || k === 'timeOut') out[k] = _formatHumanTime(row[k]);
-          else out[k] = row[k];
-        } else out[k] = '';
-      }
-      return out;
-    });
-    const ws = XLSX.utils.json_to_sheet(newData, { header: exportKeys });
-    // replace header labels with nicer display names
-    const headerRow = ['Full Name', 'Username', 'Section', 'Time In', 'Time Out', 'Status'];
-    XLSX.utils.sheet_add_aoa(ws, [headerRow], { origin: 'A1' });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
-    function s2ab(s) {
-      const buf = new ArrayBuffer(s.length);
-      const view = new Uint8Array(buf);
-      for (let i = 0; i < s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
-      return buf;
-    }
-    const blob = new Blob([s2ab(wbout)], { type: 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-  }
-
-  // collector for arbitrary tbody (calendar date view export)
-  function collectRowsDataCALENDAR(tbodySelector, ids) {
+  // collector for calendar tbody (`#attendance-specDate-tbody`) used for date-specific exports
+  function collectRowsDataCALENDAR(ids) {
     const rows = [];
-    const tbody = document.querySelector(tbodySelector);
+    const tbody = document.getElementById('attendance-specDate-tbody');
     if (!tbody) return rows;
     const trs = ids && ids.length ? Array.from(tbody.querySelectorAll('tr')).filter(tr => ids.includes(Number(tr.getAttribute('data-id')))) : Array.from(tbody.querySelectorAll('tr'));
     for (const tr of trs) {
@@ -222,6 +120,85 @@
     return rows;
   }
 
+  async function downloadAsXlsx(data, filename = 'attendance.xlsx') {
+    if (typeof XLSX === 'undefined') {
+      console.error('XLSX library not found');
+      return;
+    }
+    // remove internal-only fields (like id) before exporting; include username and section
+    const exportKeys = ['fullname', 'username', 'section', 'timeIn', 'timeOut', 'status'];
+    function _formatHumanTime(raw) {
+      if (raw === null || raw === undefined || raw === '') return '';
+      // try Date parsing first (handles ISO timestamps with timezone correctly)
+      try {
+        const d = new Date(raw);
+        if (!Number.isNaN(d.getTime())) {
+          const hh = d.getHours();
+          const mm = String(d.getMinutes()).padStart(2, '0');
+          const ss = String(d.getSeconds()).padStart(2, '0');
+          const am = hh < 12;
+          let h12 = hh % 12; if (h12 === 0) h12 = 12;
+          const hStr = String(h12); // no leading zero for hours 1-9
+          return `${hStr}:${mm}:${ss}${am ? 'AM' : 'PM'}`;
+        }
+      } catch (e) { /* fallthrough to regex parse */ }
+
+      // fallback: extract hh:mm(:ss) and optional AM/PM from the raw string
+      try {
+        const m = String(raw).match(/([0-9]{1,2}):([0-9]{2})(?::([0-9]{2}))?\s*(AM|PM)?/i);
+        if (m) {
+          const hh = Number(m[1]);
+          const mm = String(m[2]).padStart(2, '0');
+          const ss = String(m[3] || '00').padStart(2, '0');
+          const period = m[4];
+          if (period) {
+            // input already contains AM/PM — preserve it (normalize to uppercase)
+            return `${String(hh)}:${mm}:${ss}${period.toUpperCase()}`;
+          }
+          // no explicit period — infer by 24h rule
+          const am = hh < 12;
+          let h12 = hh % 12; if (h12 === 0) h12 = 12;
+          return `${String(h12)}:${mm}:${ss}${am ? 'AM' : 'PM'}`;
+        }
+      } catch (e) { /* ignore */ }
+
+      return String(raw).trim();
+    }
+
+    const newData = (Array.isArray(data) ? data : []).map(row => {
+      const out = {};
+      for (const k of exportKeys) {
+        if (Object.prototype.hasOwnProperty.call(row, k)) {
+          if (k === 'timeIn' || k === 'timeOut') out[k] = _formatHumanTime(row[k]);
+          else out[k] = row[k];
+        } else out[k] = '';
+      }
+      return out;
+    });
+    const ws = XLSX.utils.json_to_sheet(newData, { header: exportKeys });
+    // replace header labels with nicer display names
+    const headerRow = ['Full Name', 'Username', 'Section', 'Time In', 'Time Out', 'Status'];
+    XLSX.utils.sheet_add_aoa(ws, [headerRow], { origin: 'A1' });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+    function s2ab(s) {
+      const buf = new ArrayBuffer(s.length);
+      const view = new Uint8Array(buf);
+      for (let i = 0; i < s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+      return buf;
+    }
+    const blob = new Blob([s2ab(wbout)], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     // populate the attendance table date with today's date (MM-DD-YYYY)
     try {
@@ -279,6 +256,50 @@
       }
     }
 
+    // Recompute section summary table immediately from the visible attendance rows.
+    // This mirrors how other immediate DOM updates operate and avoids waiting
+    // for the attendanceStore to refresh.
+    function refreshSectionCountsFromDOM() {
+      const secTbody = document.getElementById('attendance-section-tbody');
+      if (!secTbody) return;
+      const rows = Array.from(document.querySelectorAll('#attendance-tbody tr'));
+      const bySection = new Map();
+      for (const tr of rows) {
+        try {
+          const section = (tr.dataset && tr.dataset.section) ? String(tr.dataset.section).trim() : (tr.querySelector('.section-cell') ? (tr.querySelector('.section-cell').textContent || '').trim() : 'Unknown');
+          const stEl = tr.querySelector('.status-select');
+          let status = '';
+          if (stEl) status = String(stEl.value || '').trim();
+          else {
+            // try to find status text cell
+            const statusCell = Array.from(tr.querySelectorAll('td')).find(td => /(Present|Late|Absent|Excused|Cutting)/i.test((td.textContent || '').trim()));
+            status = statusCell ? (statusCell.textContent || '').trim() : '';
+          }
+          const key = section || 'Unknown';
+          if (!bySection.has(key)) bySection.set(key, { present: 0, absent: 0, late: 0, excused: 0, cutting: 0, total: 0 });
+          const cur = bySection.get(key);
+          cur.total += 1;
+          const st = (status || '').toString().toLowerCase();
+          if (st === 'present') cur.present += 1;
+          else if (st === 'late') cur.late += 1;
+          else if (st === 'absent') cur.absent += 1;
+          else if (st === 'excused') cur.excused += 1;
+          else if (st === 'cutting') cur.cutting += 1;
+        } catch (e) { /* ignore row parse errors */ }
+      }
+      const list = Array.from(bySection.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+      const html = list.map(([section, stats]) => `
+        <tr data-section="${section}">
+          <td>${section}</td>
+          <td>${stats.present}</td>
+          <td>${stats.absent}</td>
+          <td>${stats.late}</td>
+          <td>${stats.excused}</td>
+          <td>${stats.cutting}</td>
+        </tr>`).join('');
+      secTbody.innerHTML = html;
+    }
+
     function showDeletionNotice(ids, handler) {
       if (!deletionPanel) return;
       pendingDelete = { ids: Array.isArray(ids) ? ids.slice() : (ids ? [ids] : []), handler };
@@ -333,8 +354,8 @@
 
     if (downloadBtn) {
       downloadBtn.addEventListener('click', async () => {
-        const ids = getSelectedIds();
-        const data = collectRowsData(ids);
+        // always export the entire attendance tbody (today's attendance)
+        const data = collectRowsDataATTENDANCE();
         // prefer user-specified filename from input if provided
         const fnameInput = document.getElementById('file-name-input');
         let base = '';
@@ -342,7 +363,7 @@
           base = String(fnameInput.value).trim();
         } else {
           const ts = new Date().toISOString().replace(/[:.]/g, '-');
-          base = ids.length ? `attendance-selected-${ts}` : `attendance-all-${ts}`;
+          base = `attendance-all-${ts}`;
         }
         const filename = base.toLowerCase().endsWith('.xlsx') ? base : `${base}.xlsx`;
         try {
@@ -405,8 +426,8 @@
         const specTbody = document.getElementById('attendance-specDate-tbody');
         if (!specTbody) { showNotice('No data', 'No attendance data available for the selected date'); return; }
 
-        // collect rows from tbody and only include visible rows
-        let rows = collectRowsDataCALENDAR('#attendance-specDate-tbody');
+        // collect rows from the calendar tbody and only include visible rows
+        let rows = collectRowsDataCALENDAR();
         try {
           rows = (rows || []).filter(r => {
             try {
@@ -498,7 +519,8 @@
                   const trs = Array.from(document.querySelectorAll('#attendance-tbody tr[data-id]'));
                   for (const tr of trs) {
                     const uname = String((tr.dataset && tr.dataset.username) || '').trim().toLowerCase();
-                    const fname = String((tr.children[2] && tr.children[2].textContent) || '').trim().toLowerCase();
+                    let fname = '';
+                    try { fname = String(getFullnameFromRow(tr) || '').trim().toLowerCase(); } catch (e) { fname = String((tr.children[2] && tr.children[2].textContent) || '').trim().toLowerCase(); }
                     const sec = String((tr.dataset && tr.dataset.section) || (tr.querySelector('.section-cell') && tr.querySelector('.section-cell').textContent) || '').trim().toLowerCase();
                     if (uname) existingKeys.add('u:' + uname);
                     if (fname) existingKeys.add('n:' + fname + '|' + sec);
@@ -821,7 +843,7 @@
         }
         const tokens = term.split(/\s+/).filter(Boolean);
         attendanceTbody.querySelectorAll('tr').forEach(tr => {
-          const fullname = normalize((tr.children[2] && tr.children[2].textContent) || '');
+          const fullname = normalize(getFullnameFromRow(tr) || (tr.children[0] && tr.children[0].textContent) || tr.textContent || '');
           // try explicit section cell (.section-cell) or data-section attribute or fallback to whole row text
           let section = '';
           const secCell = tr.querySelector('.section-cell');
@@ -860,6 +882,13 @@
     const editSection = document.getElementById('edit-student-section');
     const editSectionSelect = document.querySelector('select[name="section-attendance-edit"]') || document.querySelector('.select-box-edit');
     const cancelEditBtn = document.getElementById('cancel-edit-student');
+    // Multi-edit panel elements
+    const editMultiPanel = document.querySelector('.edit-multi-student-panel');
+    const editMultiForm = document.getElementById('edit-multi-student-form');
+    const editMultiTimeOut = document.getElementById('edit-multi-student-time-out');
+    const editMultiStatus = document.getElementById('edit-multi-student-status');
+    const editMultiSection = document.getElementById('edit-multi-student-section');
+    const cancelEditMultiBtn = document.getElementById('cancel-edit-multi-student');
 
     function hhmmToDisplay(hhmm) {
       if (!hhmm) return '';
@@ -1146,6 +1175,40 @@
       delete editPanel.dataset.editId;
     }
 
+    // multi-edit handlers
+    async function showEditMultiPanel(ids) {
+      if (!editMultiPanel) return;
+      try {
+        // normalize ids array
+        const arr = Array.isArray(ids) ? ids.slice() : (ids ? String(ids).split(',').map(s => Number(s)).filter(Boolean) : getSelectedIds());
+        if (!arr || arr.length < 2) return;
+        editMultiPanel.dataset.ids = arr.join(',');
+        // clear fields for multi-edit (user decides which fields to set)
+        if (editMultiTimeOut) editMultiTimeOut.value = '';
+        if (editMultiStatus) editMultiStatus.value = 'Present';
+        // ensure section selects populated (reuse existing section select population logic)
+        if (editSectionSelect && (!editSectionSelect.options || editSectionSelect.options.length === 0)) {
+          try { const ctrl = await import('./dashboardController.js'); if (ctrl && typeof ctrl.populateSectionSelects === 'function') await ctrl.populateSectionSelects(); } catch (e) { /* ignore */ }
+        }
+      } catch (e) { /* ignore */ }
+      editMultiPanel.style.display = 'flex';
+      editMultiPanel.classList.add('active');
+      if (editMultiTimeOut) editMultiTimeOut.focus();
+    }
+
+    function hideEditMultiPanel() {
+      if (!editMultiPanel) return;
+      editMultiPanel.style.display = 'none';
+      editMultiPanel.classList.remove('active');
+      delete editMultiPanel.dataset.ids;
+    }
+
+    if (cancelEditMultiBtn) cancelEditMultiBtn.addEventListener('click', (ev) => { ev.preventDefault(); hideEditMultiPanel(); });
+    if (editMultiPanel) {
+      editMultiPanel.addEventListener('click', (ev) => { if (ev.target === editMultiPanel) hideEditMultiPanel(); });
+      document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') hideEditMultiPanel(); });
+    }
+
     if (editForm) {
       editForm.addEventListener('submit', async (ev) => {
         ev.preventDefault();
@@ -1169,6 +1232,13 @@
         } catch (e) { section = (editSection && editSection.value) ? String(editSection.value).trim() : ''; }
         let tIn = editTimeIn ? editTimeIn.value : '';
         let tOut = editTimeOut ? editTimeOut.value : '';
+        // prepare full HH:MM:SS form for time-out so saved rows include seconds
+        let tOutFull = '';
+        if (tOut) {
+          const p = String(tOut).split(':').map(Number);
+          const h = p[0] || 0; const m = p[1] || 0; const s = (typeof p[2] === 'number' && !Number.isNaN(p[2])) ? p[2] : new Date().getSeconds();
+          tOutFull = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
         // Preserve seconds from the original parsed values (if present)
         // when the user hasn't modified the minute portion.
         try {
@@ -1236,7 +1306,7 @@
               // field and set seconds to zero. This is why saved rows lose
               // any original seconds value.
               if (tOut) {
-                const parts2 = String(tOut).split(':').map(Number);
+                const parts2 = String(tOutFull || tOut).split(':').map(Number);
                 const hh2 = parts2[0] || 0;
                 const mm2 = parts2[1] || 0;
                 const ss2 = parts2[2] || 0;
@@ -1273,7 +1343,7 @@
               if (typeof store.setTimeInForRow === 'function') await store.setTimeInForRow(id, iso);
             }
             if (id && tOut) {
-              const partsO = String(tOut).split(':').map(Number);
+              const partsO = String(tOutFull || tOut).split(':').map(Number);
               const hhO = partsO[0] || 0;
               const mmO = partsO[1] || 0;
               const ssO = partsO[2] || 0;
@@ -1362,19 +1432,19 @@
               const sel = tr.querySelector('.times-select');
               if (sel) {
                 if (sel.options[0]) sel.options[0].textContent = `Time In: ${tIn ? hhmmToDisplay(tIn) : 'Not Set'}`;
-                if (sel.options[1]) sel.options[1].textContent = `Time Out: ${tOut ? hhmmToDisplay(tOut) : 'Not Set'}`;
+                if (sel.options[1]) sel.options[1].textContent = `Time Out: ${tOut ? hhmmToDisplay(tOutFull || tOut) : 'Not Set'}`;
               } else {
                 try {
                   const inCell = cells.inCell || tr.querySelector('.time-in-cell');
                   const outCell = cells.outCell || tr.querySelector('.time-out-cell');
                   if (inCell && tIn && inCell !== cells.statusCell) inCell.textContent = hhmmToDisplay(tIn);
-                  if (outCell && tOut && outCell !== cells.statusCell) outCell.textContent = hhmmToDisplay(tOut);
+                  if (outCell && tOut && outCell !== cells.statusCell) outCell.textContent = hhmmToDisplay(tOutFull || tOut);
                 } catch (e) { /* ignore */ }
                 // fallback for combined IN/OUT layout
                 try {
                   const tds = Array.from(tr.querySelectorAll('td'));
                   const timesTd = tds.find(td => /IN[: ]|OUT[: ]/i.test(td.textContent || ''));
-                  if (timesTd && timesTd !== cells.statusCell) timesTd.innerHTML = `IN: ${tIn ? hhmmToDisplay(tIn) : 'Not Set'} <br> OUT: ${tOut ? hhmmToDisplay(tOut) : 'Not Set'}`;
+                  if (timesTd && timesTd !== cells.statusCell) timesTd.innerHTML = `IN: ${tIn ? hhmmToDisplay(tIn) : 'Not Set'} <br> OUT: ${tOut ? hhmmToDisplay(tOutFull || tOut) : 'Not Set'}`;
                 } catch (e) { /* ignore */ }
               }
             }
@@ -1398,6 +1468,10 @@
           }
         } catch (e) { /* ignore calendar update errors */ }
 
+        // update section counts immediately from DOM so the section summary
+        // table reflects edits without waiting for the attendanceStore refresh
+        try { if (typeof refreshSectionCountsFromDOM === 'function') refreshSectionCountsFromDOM(); } catch (e) { /* ignore */ }
+
         // refresh relevant views
         try { const t = await import('./todayAttendanceView.js'); if (t && typeof t.renderTodayAttendance === 'function') t.renderTodayAttendance(); } catch (e) { }
         try { const r = await import('./recentStudentsView.js'); if (r && typeof r.renderRecentStudents === 'function') r.renderRecentStudents(); } catch (e) { }
@@ -1418,6 +1492,149 @@
         try { const ctrl = await import('./dashboardController.js'); if (ctrl && typeof ctrl.populateSectionSelects === 'function') await ctrl.populateSectionSelects(); } catch (e) { /* ignore */ }
 
         hideEditPanel();
+      });
+    }
+
+    // handle multi-edit submit: apply selected fields to all selected rows
+    if (editMultiForm) {
+      editMultiForm.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        // determine ids
+        let ids = [];
+        try {
+          if (editMultiPanel && editMultiPanel.dataset && editMultiPanel.dataset.ids) ids = String(editMultiPanel.dataset.ids).split(',').map(s => Number(s)).filter(Boolean);
+        } catch (e) { ids = getSelectedIds(); }
+        if (!ids || ids.length < 2) { hideEditMultiPanel(); return; }
+
+        const tOut = editMultiTimeOut ? String(editMultiTimeOut.value || '').trim() : '';
+        const status = editMultiStatus ? String(editMultiStatus.value || '').trim() : '';
+        // resolve section: prefer select (unless 'new'), otherwise free-text input
+        let section = '';
+        try {
+          if (editSectionSelect) {
+            const val = String(editSectionSelect.value || '').trim();
+            if (val && val !== 'new') section = val.replace(/&quot;/g, '"');
+            else if (editMultiSection) section = String(editMultiSection.value || '').trim();
+          } else if (editMultiSection) section = String(editMultiSection.value || '').trim();
+        } catch (e) { section = (editMultiSection && editMultiSection.value) ? String(editMultiSection.value).trim() : ''; }
+
+        // build ISO time_out if provided. If input lacks seconds, use current seconds so we persist seconds.
+        let isoOut = null;
+        // full tOut including seconds (HH:MM:SS) for display
+        let tOutFull = '';
+        if (tOut) {
+          const parts = String(tOut).split(':').map(Number);
+          const hh = parts[0] || 0;
+          const mm = parts[1] || 0;
+          let ss;
+          if (typeof parts[2] === 'number' && !Number.isNaN(parts[2])) ss = parts[2];
+          else ss = new Date().getSeconds();
+          tOutFull = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+          const d = new Date(); d.setHours(hh, mm, ss, 0); isoOut = d.toISOString();
+        }
+
+        // server-side: send time/status/section for all selected ids
+        try {
+          const backendPayload = {};
+          if (isoOut) backendPayload.time_out = isoOut;
+          if (status) backendPayload.status = status;
+          if (section) backendPayload.student_section = section;
+
+          if (Object.keys(backendPayload).length > 0 && window.attendyAPI && typeof window.attendyAPI.editAttendance === 'function') {
+            // prefer calling first one then apply to others; continue on errors
+            const idsList = Array.isArray(ids) ? ids.slice() : (ids ? [ids] : []);
+            for (const id of idsList) {
+              try {
+                await window.attendyAPI.editAttendance(id, backendPayload);
+              } catch (e) {
+                // ignore per-id backend errors but continue
+              }
+            }
+          }
+        } catch (e) { /* ignore */ }
+
+        // update local store where possible
+        try {
+          const mod = await import('./attendanceStore.js');
+          const store = mod && (mod.default || mod);
+          if (store) {
+            if (isoOut && typeof store.setTimeoutForRows === 'function') {
+              try { await store.setTimeoutForRows(ids, isoOut); } catch (e) { /* ignore */ }
+            }
+            // apply section/status via updateRow where available
+            if (typeof store.updateRow === 'function') {
+              for (const id of ids) {
+                const payload = {};
+                if (section) payload.student_section = section;
+                if (status) payload.status = status;
+                try { await store.updateRow(id, payload); } catch (e) { /* ignore */ }
+              }
+            }
+          }
+        } catch (e) { /* ignore */ }
+
+        // update DOM immediate feedback for each affected row
+        try {
+          for (const id of ids) {
+            try {
+              const tr = document.querySelector(`#attendance-tbody tr[data-id="${id}"]`) || document.querySelector(`#attendance-specDate-tbody tr[data-id="${id}"]`);
+              if (!tr) continue;
+              // update dataset and visible section cell
+              if (section) {
+                tr.dataset.section = section;
+                const secEl = tr.querySelector('.section-cell'); if (secEl) secEl.textContent = section;
+              }
+              // update status
+              if (status) {
+                const stEl = tr.querySelector('.status-select');
+                if (stEl) {
+                  const m = Array.from(stEl.options).find(o => (o.value || '').toLowerCase() === status.toLowerCase());
+                  if (m) stEl.value = m.value; else { const opt = document.createElement('option'); opt.value = status; opt.textContent = status; stEl.appendChild(opt); stEl.value = opt.value; }
+                } else {
+                  // write into a plain cell if exists
+                  const tds = Array.from(tr.querySelectorAll('td'));
+                  const statusCell = tds.find(td => /(Present|Late|Absent|Excused)/i.test((td.textContent || '').trim()));
+                  if (statusCell) statusCell.textContent = status;
+                }
+              }
+              // update time out display (use full HH:MM:SS when available)
+              if (isoOut) {
+                // prefer times-select
+                const sel = tr.querySelector('.times-select');
+                if (sel) {
+                  if (sel.options[1]) sel.options[1].textContent = `Time Out: ${hhmmToDisplay(tOutFull || tOut) || 'Not Set'}`;
+                } else {
+                  const outCell = tr.querySelector('.time-out-cell');
+                  if (outCell) outCell.textContent = hhmmToDisplay(tOutFull || tOut);
+                  else {
+                    // fallback combined cell
+                    const tds = Array.from(tr.querySelectorAll('td'));
+                    const timesTd = tds.find(td => /IN[: ]|OUT[: ]/i.test(td.textContent || ''));
+                    if (timesTd) timesTd.innerHTML = `IN: ${timesTd.innerHTML.includes('IN:') ? (timesTd.innerHTML.match(/IN:\s*([^<\n]+)/) || [])[1] : 'Not Set'} <br> OUT: ${hhmmToDisplay(tOutFull || tOut)}`;
+                  }
+                }
+              }
+            } catch (e) { /* ignore per-row errors */ }
+          }
+        } catch (e) { /* ignore DOM update errors */ }
+
+        // immediately refresh section counts from DOM so section summary updates
+        try { if (typeof refreshSectionCountsFromDOM === 'function') refreshSectionCountsFromDOM(); } catch (e) { /* ignore */ }
+
+        // refresh derived views
+        try { const t = await import('./todayAttendanceView.js'); if (t && typeof t.renderTodayAttendance === 'function') t.renderTodayAttendance(); } catch (e) { }
+        try { const r = await import('./recentStudentsView.js'); if (r && typeof r.renderRecentStudents === 'function') r.renderRecentStudents(); } catch (e) { }
+        try { const m = await import('./mostPresentView.js'); if (m && typeof m.renderMostPresent === 'function') m.renderMostPresent(); } catch (e) { }
+        try { const s = await import('./todayAttendanceSectionView.js'); if (s && typeof s.renderAttendanceSections === 'function') s.renderAttendanceSections(); } catch (e) { }
+
+        // ensure table button states and filters reflect the changes
+        try { updateDownloadState(); } catch (e) { /* ignore */ }
+        try {
+          const searchInput = document.querySelector('.attendance-table-container .search-input');
+          if (searchInput && searchInput.value) searchInput.dispatchEvent(new Event('input'));
+        } catch (e) { /* ignore */ }
+
+        hideEditMultiPanel();
       });
     }
 
@@ -1527,7 +1744,7 @@
         // filter out rows that already have a timeOut set (check DOM and canonical store)
         let idsToApply = [];
         try {
-          const rows = collectRowsData(ids);
+          const rows = collectRowsDataATTENDANCE(ids);
           // attempt to also consult canonical store for existing time_out values
           let storeRowsMap = null;
           try {
@@ -1554,6 +1771,7 @@
             } catch (e) { return true; }
           }).map(r => r.id).filter(Boolean);
         } catch (e) {
+
           idsToApply = ids.slice(); // fallback: try all
         }
 
@@ -2193,8 +2411,17 @@
               return;
             }
             if (cls.includes('edit')) {
-              // open full edit panel instead of prompt
-              try { showEditPanel(tr); } catch (e) { /* ignore */ }
+              // if multiple rows are selected (>2), open multi-edit panel
+              try {
+                const ids = getSelectedIds();
+                if (ids && ids.length > 1) {
+                  try { await showEditMultiPanel(ids); } catch (e) { /* ignore */ }
+                } else {
+                  try { showEditPanel(tr); } catch (e) { /* ignore */ }
+                }
+              } catch (e) {
+                try { showEditPanel(tr); } catch (err) { /* ignore */ }
+              }
               return;
             }
           } catch (e) {
