@@ -16,8 +16,12 @@ const store = new Store();
 import { watchRenderer } from './watcher.js';
 watchRenderer([
   path.join(__dirname, '../main/dash.html'),
+  path.join(__dirname, '../main/start.html'),
   path.join(__dirname, '../main/zesty-design/dashboard.css'),
+  path.join(__dirname, '../main/zesty-design/start.css'),
+  path.join(__dirname, '../main/zesty-design/graph.css'),
   path.join(__dirname, '../main/zesty-design/source.css'),
+  // script here soon lol
 ]);
 
 let PyAttendy;
