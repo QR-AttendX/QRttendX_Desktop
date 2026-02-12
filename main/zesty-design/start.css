@@ -107,3 +107,7 @@ main {
     cursor: pointer;
   }
 }
+
+.body-started-teacher-choice {
+    display: none;
+}

@@ -4,18 +4,45 @@
   document.addEventListener('DOMContentLoaded', async () => {
     const teacherMain = document.getElementById('teacher-main');
     const studentMain = document.getElementById('student-main');
+    // Essential of a specific teacher needs
+    const adviserSec = document.getElementById('adviser-section');
+    //Grabs the InnerHtml of the sidebar so we can move the statistics outside the Student dropdown to ease access for teachers
+    const sidebar = document.querySelector('#side-bar > ul');
+    const statisticLi = document.getElementById('statistics');
+    const calendarLi = document.getElementById('calendar');
+
     if (!teacherMain || !studentMain) return;
 
     try {
       const user = await window.attendyAPI.getSession();
       const role = (user && user.role) ? String(user.role).toLowerCase() : 'teacher';
 
+      // the role strings can be "student", "teacher subject", "teacher adviser", or "teacher subject adviser"
+      //this grabs information from the config.json fil at your Appdata/Roaming/QRttendX
+      //to acces it use windows key + R and type %appdata%/QRttendX/config.json and open it with notepad, to check the role string assigned to you for debugging purposes
       if (role === 'student') {
         studentMain.style.display = 'grid';
         teacherMain.style.display = 'none';
-      } else {
+      } else if (role === 'teacher subject') {
         teacherMain.style.display = 'grid';
         studentMain.style.display = 'none';
+
+        adviserSec.style.display = 'none';
+      } else if (role === 'teacher adviser') {
+        teacherMain.style.display = 'grid';
+        studentMain.style.display = 'none';
+
+        adviserSec.style.display = 'block';
+        sidebar.insertBefore(statisticLi, calendarLi); // move statistics above calendar
+
+      }
+      else if (role === 'teacher subject adviser') {
+        teacherMain.style.display = 'grid';
+        studentMain.style.display = 'none';
+
+        adviserSec.style.display = 'block';
+        sidebar.insertBefore(statisticLi, calendarLi); // move statistics above calendar
+
       }
     } catch (e) {
       console.warn('setMainByRole failed, defaulting to teacher', e);

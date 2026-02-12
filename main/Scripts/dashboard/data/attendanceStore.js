@@ -271,7 +271,7 @@ const store = (function () {
       _emitChange();
       return true;
     } catch (e) {
-      console.warn('deleteRow failed', e);
+      console.warn('deleteRow failed: ', e);
       return false;
     }
   }

@@ -9,6 +9,7 @@ const calendarContainer = document.querySelector('.calendar-container');
 const attendanceContainer = document.querySelector('.student-attendance-container');
 const statisticsContainer = document.querySelector('.student-statistics-container');
 const dashboardContainer = document.querySelector('.dashboard-container');
+const adviserContainer = document.querySelector('.adviser-container');
 
 function closeAll() {
   if (settingContainer) settingContainer.classList.add('closed');
@@ -16,6 +17,7 @@ function closeAll() {
   if (attendanceContainer) attendanceContainer.classList.add('closed');
   if (statisticsContainer) statisticsContainer.classList.add('closed');
   if (dashboardContainer) dashboardContainer.classList.add('closed');
+  if (adviserContainer) adviserContainer.classList.add('closed');
 }
 
 function showContainerForHash(hash) {
@@ -32,6 +34,9 @@ function showContainerForHash(hash) {
       break;
     case '#statistics':
       if (statisticsContainer) statisticsContainer.classList.remove('closed');
+      break;
+    case '#adviser':
+      if (adviserContainer) adviserContainer.classList.remove('closed');
       break;
     case '#dashboard':
     default:

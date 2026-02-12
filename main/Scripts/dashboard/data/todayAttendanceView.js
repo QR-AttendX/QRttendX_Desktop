@@ -32,7 +32,8 @@ function _buildRowHtml(r) {
           <option value="Present" ${status === 'Present' ? 'selected' : ''}>Present</option>
           <option value="Late" ${status === 'Late' ? 'selected' : ''}>Late</option>
           <option value="Excused" ${status === 'Excused' ? 'selected' : ''}>Excused</option>
-          <option value="Absent" ${status === 'Absent' ? 'selected' : ''}>Absent</option>
+          <option value="Absent" ${status === 'Absent' ? 'selected' :  ''}>Absent</option>
+          <option value="Cutting" ${status === 'Cutting' ? 'selected' : ''}>Cutting</option>
         </select>
       </td>
     </tr>

@@ -53,7 +53,7 @@
           </a>
         </li>
 
-        <li>
+        <li id="adviser active">
           <button class="dropdown-btn">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000">
               <path
@@ -67,6 +67,16 @@
           </button>
           <ul class="sub-menu">
             <div>
+              <li id="adviser-section">
+                <a href="#adviser">
+                  <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#000000">
+                    <path
+                      d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h168q14-36 44-58t68-22q38 0 68 22t44 58h168q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm301.5-678.5Q510-807 510-820t-8.5-21.5Q493-850 480-850t-21.5 8.5Q450-833 450-820t8.5 21.5Q467-790 480-790t21.5-8.5ZM200-246q54-53 125.5-83.5T480-360q83 0 154.5 30.5T760-246v-514H200v514Zm379-235q41-41 41-99t-41-99q-41-41-99-41t-99 41q-41 41-41 99t41 99q41 41 99 41t99-41ZM280-200h400v-10q-42-35-93-52.5T480-280q-56 0-107 17.5T280-210v10Zm157.5-337.5Q420-555 420-580t17.5-42.5Q455-640 480-640t42.5 17.5Q540-605 540-580t-17.5 42.5Q505-520 480-520t-42.5-17.5ZM480-503Z" />
+                  </svg>
+                  Adviser
+                </a>
+              </li>
               <li>
                 <a href="#attendance">
                   <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
@@ -77,7 +87,7 @@
                   Attendance
                 </a>
               </li>
-              <li>
+              <li id="statistics">
                 <a href="#statistics">
                   <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#000000">
@@ -91,7 +101,7 @@
           </ul>
         </li>
 
-        <li>
+        <li id="calendar">
           <a href="#calendar">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000">
               <path
@@ -247,13 +257,12 @@
 
     </section>
 
-    <section class="student-attendance-container closed">
+    <section class="adviser-container closed">
       <div class="sub-dashboard-container">
         <div>
-          <h1>Attendance</h1>
+          <h1>Adviser</h1>
           <p><span id="schoolNick"></span> • <span id="workspace"></span> • <span id="page"></span></p>
         </div>
-
         <div class="profile-card">
           <button class="notification-btn">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000">
@@ -271,8 +280,63 @@
           </button>
         </div>
       </div>
-      <div class="main-container">
+      <div class="main-container-list">
+        <div class="overhaul-student-list">
+          <button id="add-student-overhaul">Add Student</button>
+          <form action="" class="search-container">
+            <input type="search" name="search-student" id="" class="search-input" placeholder="Search for student..">
+            <button id="search-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                fill="#000000">
+                <path
+                  d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z" />
+              </svg>
+            </button>
+          </form>
 
+          <table id="student-overall-table">
+            <caption>Students of <span id="Section-owned"></span></caption>
+            <thead id="student-overall-thead">
+              <th>Full name</th>
+              <th>Username/LRN</th>
+
+            </thead>
+            <tbody id="student-overall-tbody">
+
+            </tbody>
+          </table>
+
+
+        </div>
+      </div>
+
+    </section>
+
+    <section class="student-attendance-container closed">
+      <div class="sub-dashboard-container">
+        <div>
+          <h1>Attendance</h1>
+          <p><span id="schoolNick"></span> • <span id="workspace"></span> • <span id="page"></span></p>
+        </div>
+        <div class="profile-card">
+          <button class="notification-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000">
+              <path
+                d="M160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160Zm320-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-280h320v-280q0-66-47-113t-113-47q-66 0-113 47t-47 113v280Z" />
+            </svg>
+          </button>
+          <button id="opn-pf-info" class="profile-info">
+            <div>
+              <p id="fullname2"></p>
+              <p id="username2"></p>
+              <p id="email2"></p>
+            </div>
+            <img id="profile-picture" src="media/icons/default-profile.png" alt="">
+          </button>
+        </div>
+      </div>
+
+      <div class="main-container">
         <div class="attendance-table-container">
           <div class="options">
             <button id="add-student">add Student</button>
@@ -350,11 +414,21 @@
                   </svg>
                   <p>Late</p>
                 </th>
+                <th>
+                  <p>Excused</p>
+                </th>
+                <th>
+                  <p>Cutting</p>
+                </th>
               </tr>
             </thead>
             <tbody id="attendance-section-tbody">
             </tbody>
           </table>
+        </div>
+
+        <div class="attendance-table-overhaul-container inactive">
+
         </div>
 
 
@@ -386,7 +460,9 @@
         </div>
       </div>
       <div class="main-statistics-container">
-        <h1 style="text-align: center;">Coming soon..</h1>
+
+
+
       </div>
 
     </section>
@@ -414,7 +490,7 @@
           </div>
           <div class="the-stat">
             <div>
-              <h1>attendance as of <span id="specific-day-attendance"></span></h1>
+              <h1>Attendance as of <span id="specific-day-attendance"></span></h1>
             </div>
             <div class="column-graph-container">
               <canvas id="column-attendCalend-graph"></canvas>
@@ -726,6 +802,25 @@
     </div>
   </div>
 
+  <!-- Add your Student Panel -->
+  <div class="add-your-student-panel">
+    <div class="add-your-student-card">
+      <h2>Add Your Student</h2>
+      <form action="submit" id="add-your-student-form">
+        <label for="add-your-student-fullname">Fullname:</label>
+        <input type="text" id="add-your-student-fullname" name="add-your-student-fullname" required>
+
+        <label for="add-your-student-username">Username/LRN:</label>
+        <input type="text" id="add-your-student-username" name="add-your-student-username" required>
+
+        <div class="form-actions">
+          <button type="button" id="cancel-add-your-student">Cancel</button>
+          <button type="submit">Add Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Edit Panel -->
   <div class="edit-student-panel">
     <div class="edit-student-card">
@@ -770,6 +865,7 @@
   <!-- Multi-edit Panel -->
   <div class="edit-multi-student-panel">
     <div class="edit-multi-student-card">
+      <h2>Edit multiple students</h2>
       <form action="submit" id="edit-multi-student-form">
         <label for="">Time Out:</label>
         <input type="time" name="edit-multi-student-time-out" id="edit-multi-student-time-out">
@@ -781,17 +877,10 @@
             <option value="Late">Late</option>
             <option value="Absent">Absent</option>
             <option value="Excused">Excused</option>
-          </select>
-        </div>
-
-        <label for="edit-multi-student-section">Section:</label>
-        <div class="select-container">
-          <select name="section-attendance-edit" class="select-box-edit">
-            <option value="new">New Section</option>
+            <option value="Cutting">Cutting</option>
 
           </select>
         </div>
-        <input type="text" id="edit-multi-student-section" name="edit-multi-student-section" required>
 
         <div class="form-actions">
           <button type="button" id="cancel-edit-multi-student">Cancel</button>
@@ -832,9 +921,11 @@
             <p id="section-duplicate"></p>
           </div>
         </div>
-        <p>would you merge them? or select one of the entry to be save for today's attendance</p>
+        <p>would you like to select one of the entry to be save for today's attendance</p>
         <button id="dup-cancel-btn" class="btn-cancel">Cancel</button>
-        <button id="dup-override-btn" class="btn-danger">Override</button>
+        <!-- Merge option removed: choose Original or Choose Duplicate instead -->
+        <button id="dup-choose-original-btn" class="btn-danger">Choose Original</button>
+        <button id="dup-choose-duplicate-btn" class="btn-danger">Choose Duplicate</button>
       </div>
     </div>
   </div>
@@ -859,9 +950,9 @@
       <div class="select-container download-option-select">
         <select name="download-option-select" id="download-option-select" class="select-box-download">
           <option value="Today">Today</option>
-          <option value="this-week">Specific Week</option>
-          <option value="this-month">This Month</option>
-          <option value="this-year">this Year</option>
+          <option value="this-week" disabled>Specific Week (disabled)</option>
+          <option value="this-month" disabled>This Month (disabled)</option>
+          <option value="this-year" disabled>this Year (disabled)</option>
         </select>
       </div>
 

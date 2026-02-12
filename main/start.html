@@ -2,7 +2,8 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' http://localhost:* http://127.0.0.1:*;">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../main/zesty-design/start.css">
   <link rel="stylesheet" href="../main/zesty-design/source.css">
@@ -55,12 +56,20 @@
         <input type="text" name="section" class="field-signer" placeholder="e.g. 12 - Berners Lee" id="section"
           style="display:none">
 
-        <button type="submit" class="button-signer" id="letsgo">Start</button>
+        <button type="submit" class="button-signer" id="next-body">Next</button>
       <p id="warning-error" style="color: red;"></p>
 
       </form>
     </div>
 
+    <div class="body-started-teacher-choice">
+      <h2>Welcome <span id="teacher-name"></span></h2>
+      <p>Are you a subject or an Adviser Teacher?</p>
+      <div class="teacher-choice">
+        <button id="subject-teacher">Subject Teacher</button>
+        <button id="adviser-teacher">Adviser Teacher</button>
+        <button id="both-teacher">Both</button>
+    </div>
     </div>
     <!--END of Get Started ppage-->
 

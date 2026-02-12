@@ -4,7 +4,7 @@
     const checked = Array.from(document.querySelectorAll('#attendance-tbody .row-select:checked'));
     return checked.map(cb => Number(cb.getAttribute('data-id'))).filter(Boolean);
   }
-
+  // collector for attendance tbody (`#attendance-tbody`) used for date-specific exports
   function collectRowsDataATTENDANCE(ids) {
     const rows = [];
     const tbody = document.getElementById('attendance-tbody');

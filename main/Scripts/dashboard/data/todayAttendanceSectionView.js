@@ -12,13 +12,16 @@ export function renderAttendanceSections() {
   for (const r of rows) {
     // Accept multiple possible field names coming from backend or QR payload
     const section = (r.student_section || r.section || r.section_name || '').toString().trim() || 'Unknown';
-    if (!bySection.has(section)) bySection.set(section, { present: 0, absent: 0, late: 0, total: 0 });
+    if (!bySection.has(section)) bySection.set(section, { present: 0, absent: 0, late: 0, excused: 0, cutting: 0, total: 0 });
     const st = (r.status || '').toString().toLowerCase();
     const cur = bySection.get(section);
     cur.total += 1;
     if (st === 'present') cur.present += 1;
     else if (st === 'late') cur.late += 1;
     else if (st === 'absent') cur.absent += 1;
+    else if (st === 'excused') cur.excused += 1;
+    else if (st === 'cutting') cur.cutting += 1;
+
     else {
       // unknown statuses not counted
     }
@@ -26,7 +29,7 @@ export function renderAttendanceSections() {
 
   const parts = [];
   const list = Array.from(bySection.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  for (const [section, stats] of list) parts.push(`${section}|${stats.present}|${stats.absent}|${stats.late}|${stats.total}`);
+  for (const [section, stats] of list) parts.push(`${section}|${stats.present}|${stats.absent}|${stats.late}|${stats.excused}|${stats.cutting}|${stats.total}`);
   const fp = parts.join('\n');
   if (fp === _lastFingerprint) return;
   _lastFingerprint = fp;
@@ -37,6 +40,8 @@ export function renderAttendanceSections() {
       <td>${stats.present}</td>
       <td>${stats.absent}</td>
       <td>${stats.late}</td>
+      <td>${stats.excused}</td>
+      <td>${stats.cutting}</td>
     </tr>`).join('');
 
   tbody.innerHTML = html;

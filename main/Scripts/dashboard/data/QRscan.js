@@ -130,43 +130,60 @@ function startScanner() {
           }
         }
 
-        // Send to backend
-        let recordPromise;
-        if (window.attendyAPI && typeof window.attendyAPI.recordAttendance === 'function') {
-          recordPromise = window.attendyAPI.recordAttendance(postData);
-        } else {
-          recordPromise = fetch('http://localhost:5005/record_attendance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(postData)
-          }).then(r => r.json());
-        }
+        // Send to backend (use dupe handler if available)
+        const doRecord = async () => {
+          try {
+            if (window.attendyDupe && typeof window.attendyDupe.handlePotentialDuplicate === 'function') {
+              const res = await window.attendyDupe.handlePotentialDuplicate(postData);
+              console.log('handlePotentialDuplicate result', res);
+              // If created or used-existing, ensure store refresh/add visual row
+              if (res && (res.action === 'created' || res.action === 'used-existing' || res.action === 'used-existing-today' || res.action === 'used-existing-past')) {
+                try {
+                  if (typeof attendanceStore.refreshAttendance === 'function') await attendanceStore.refreshAttendance();
+                  else if (res.existing && attendanceStore.addRow) attendanceStore.addRow(res.existing);
+                } catch (e) { /* ignore */ }
+                if (!visualDuplicate && tbody) {
+                  const tr = document.createElement('tr');
+                  tr.dataset.username = normUser;
+                  tr.innerHTML = `<td>${fullname || normUser}</td><td>${new Date().toLocaleTimeString()}</td><td>${section || ''}</td>`;
+                  tbody.prepend(tr);
+                }
+              }
+              return res;
+            }
 
-        recordPromise
-          .then(resp => {
+            // fallback to direct recordAttendance
+            let resp;
+            if (window.attendyAPI && typeof window.attendyAPI.recordAttendance === 'function') {
+              resp = await window.attendyAPI.recordAttendance(postData);
+            } else {
+              resp = await fetch('http://localhost:5005/record_attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(postData)
+              }).then(r => r.json());
+            }
+
             console.log('recordAttendance response', resp);
-
-            // Update shared store if applicable — controller subscribes and will re-render lists.
             try {
               if (resp && (resp.row || resp)) {
                 attendanceStore.addRow(resp.row || resp);
               } else if (typeof attendanceStore.refreshAttendance === 'function') {
                 attendanceStore.refreshAttendance().catch(() => { });
               }
-            } catch (e) {
-              console.warn('handling recordAttendance response failed', e);
-            }
+            } catch (e) { console.warn('handling recordAttendance response failed', e); }
 
-            // Optionally show immediate temporary row in new-added-students (visual only)
             if (!visualDuplicate && tbody) {
               const tr = document.createElement('tr');
               tr.dataset.username = normUser;
               tr.innerHTML = `<td>${fullname || normUser}</td><td>${new Date().toLocaleTimeString()}</td><td>${section || ''}</td>`;
               tbody.prepend(tr);
             }
+            return resp;
+          } catch (err) { console.warn('record/dupe handler failed', err); return { error: err }; }
+        };
 
-          })
-          .catch(err => console.warn('recordAttendance failed', err));
+        doRecord();
 
         // Cleanup old recently scanned entries
         for (const [k, ts] of _recentlyScanned.entries()) {

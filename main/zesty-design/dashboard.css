@@ -577,7 +577,8 @@ tbody tr:last-child td:last-child {
 .calendar-container,
 .settings-container,
 .student-attendance-container,
-.student-statistics-container {
+.student-statistics-container,
+.adviser-container {
   overflow-y: scroll;
   padding: 20px;
   margin-top: 10px;
@@ -920,6 +921,11 @@ tbody tr:last-child td:last-child {
 
     table {
       width: 100%;
+    }
+  }
+  .attendance-table-overhaul-container {
+    &.inactive {
+      display: none;
     }
   }
 }
@@ -1414,6 +1420,7 @@ tbody tr:last-child td:last-child {
   display: none;
   /* shown via JS */
   position: fixed;
+  top: 32px !important;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
   align-items: center;
@@ -1470,6 +1477,7 @@ tbody tr:last-child td:last-child {
   display: none;
   /* shown via JS */
   position: fixed;
+  top: 32px !important;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
   align-items: center;
@@ -1609,6 +1617,39 @@ tbody tr:last-child td:last-child {
   }
 }
 
+.duplicate-panel {
+  display: none;
+  /* shown via JS */
+  position: fixed;
+  top: 32px !important;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  align-items: center;
+  justify-content: center;
+  z-index: 11003;
+  padding: 20px;
+  transition: opacity 160ms ease, visibility 160ms ease;
+
+  &.active,
+  &.show {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .duplicate-card {
+        width: 420px;
+          max-width: calc(100% - 40px);
+          background: #ffffff;
+          color: #111;
+          border-radius: 12px;
+          padding: 18px;
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+          transform: translateY(0);
+          transition: transform 180ms ease, opacity 160ms ease;
+  }
+}
+
 /* responsive tweaks */
 @media (max-width: 480px) {
   .add-student-card {
@@ -1706,6 +1747,105 @@ tbody tr:last-child td:last-child {
       }
 
       #cancel-edit-student,
+      .btn-cancel {
+        background: #f1f1f1;
+        color: #222;
+      }
+
+      button[type="submit"],
+      .btn-primary {
+        background: #4c6dff;
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(76, 109, 255, 0.12);
+      }
+    }
+
+  }
+}
+
+/* Multi-Edit Student Panel (matches single-edit styling) */
+.edit-multi-student-panel {
+  display: none;
+  position: fixed;
+  top: 32px !important;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  align-items: center;
+  justify-content: center;
+  z-index: 11003;
+  padding: 20px;
+  transition: opacity 160ms ease, visibility 160ms ease;
+
+  &.active,
+  &.show {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .edit-multi-student-card {
+    width: 420px;
+    max-width: calc(100% - 40px);
+    background: #ffffff;
+    color: #111;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+    transform: translateY(0);
+    transition: transform 180ms ease, opacity 160ms ease;
+
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    input[type="text"],
+    input[type="time"],
+    .select-box {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #dcdcdc;
+      font-size: 14px;
+      box-sizing: border-box;
+      background: #fff;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+
+      input:focus {
+        outline: none;
+        border-color: #6c7cff;
+        box-shadow: 0 4px 14px rgba(108, 124, 255, 0.12);
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 6px;
+
+      button {
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      #cancel-edit-multi-student,
       .btn-cancel {
         background: #f1f1f1;
         color: #222;
