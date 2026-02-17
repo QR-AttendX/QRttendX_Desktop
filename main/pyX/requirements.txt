@@ -1,0 +1,4 @@
+flask
+qrcode
+Pillow
+waitress

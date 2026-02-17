@@ -1,7 +1,7 @@
 {
   "name": "qr-attend-x",
   "productName": "QRttendX",
-  "version": "0.1.1-a3",
+  "version": "0.1.2-a3",
   "description": "QRttendX made by ÆCE acebld",
   "license": "AGPL-3.0-only",
   "author": "QRttendX by ÆCE acebld",
@@ -33,8 +33,8 @@
     },
     "extraResources": [
       {
-        "from": "main/pyAttendy/dist/attendy_engine.exe",
-        "to": "atom/attendy_engine.exe"
+        "from": "main/pyAttendy/dist/AttendX.exe",
+        "to": "atom/AttendX.exe"
       }
     ]
   },

@@ -64,9 +64,9 @@ function startBackend({ timeoutMs = 30000, intervalMs = 300 } = {}) {
     // spawn process (dev vs production)
     if (isDev) {
       // Run python with unbuffered output so logs appear immediately
-      PyAttendy = spawn('python', ['-u', path.join(__dirname, '../main/pyAttendy/attendy_engine.py')], { stdio: ['ignore', 'pipe', 'pipe'], env: process.env });
+      PyAttendy = spawn('python', ['-u', path.join(__dirname, '../main/pyX/AttendX.py')], { stdio: ['ignore', 'pipe', 'pipe'], env: process.env });
     } else {
-      const exePath = path.join(process.resourcesPath, 'atom', 'attendy_engine.exe');
+      const exePath = path.join(process.resourcesPath, 'atom', 'AttendX.exe');
       PyAttendy = execFile(exePath, { windowsHide: true });
     }
 
@@ -79,7 +79,7 @@ function startBackend({ timeoutMs = 30000, intervalMs = 300 } = {}) {
         PyAttendy = null;
       });
       PyAttendy.on && PyAttendy.on('close', () => { PyAttendy = null; });
-      PyAttendy.on && PyAttendy.on('error', (err) => { console.error('PyAttendy error:', err); });
+      PyAttendy.on && PyAttendy.on('error', (err) => { console.error('PyX error:', err); });
     } catch (e) { /* ignore */ }
 
     // Relay logs and watch for server-ready messages to speed up startup

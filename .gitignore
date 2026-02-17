@@ -2,10 +2,10 @@
 node_modules/
 
 # Database files and builds
-main/pyAttendy/*.db
-main/pyAttendy/dist
-main/pyAttendy/*.spec
-main/pyAttendy/build
+main/pyX/*.db
+main/pyX/dist
+main/pyX/*.spec
+main/pyX/build
 
 # Python virtual environment
 build
