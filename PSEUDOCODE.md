@@ -300,5 +300,5 @@ END
 
 PROJECT QR ATTENDANCE SYSTEM (QRttendX) PSUEDO CODE/ALGORITHM
 CONTRIBUTORS:
-- @AshBeldad02
-- @ryuzkzqt-ops
+- [@AshBeldad02](https://github.com/AshBeldad02)
+- [@ryuzkzqt-ops](https://github.com/ryuzkzqt-ops)
