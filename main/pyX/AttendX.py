@@ -10,6 +10,7 @@ import traceback
 import logging
 from datetime import datetime
 import multiprocessing
+from urllib.parse import quote
 
 # NOTE: INSTALL A GODDAMN WAITRESS you Restless skibidi coder (message from Spades)
 # NOTE: im trying twin
@@ -88,13 +89,30 @@ def generate_qr(fullname, username, role, section=None, logo_path=None):
     if section:
         payload['section'] = section
 
+    # Expose a releases link so generic QR scanners (Google Lens, scanner apps)
+    # will navigate to the releases page instead of showing raw JSON.
+    RELEASES_URL = "https://github.com/QR-AttendX/QRttendX_Desktop/releases"
+    # Also include the releases_url inside the profile JSON so apps that expect
+    # a JSON payload can still read it from the `profile` param.
+    payload['releases_url'] = RELEASES_URL
+
+    # Build a URL payload that points to the releases page and carries the
+    # profile JSON as an encoded `profile` query parameter. Fallback to raw
+    # JSON if quoting fails for any reason.
+    try:
+        profile_json = json.dumps(payload)
+        profile_param = quote(profile_json, safe='')
+        qr_data = f"{RELEASES_URL}?profile={profile_param}"
+    except Exception:
+        qr_data = json.dumps(payload)
+
     qr = qrcode.QRCode(
         version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
         box_size=10,
         border=4
     )
-    qr.add_data(json.dumps(payload))
+    qr.add_data(qr_data)
     qr.make(fit=True)
 
     img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
