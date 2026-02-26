@@ -4,8 +4,8 @@
 ---
 
 ## Status
-
-**Alpha** - Under Review/Survey form by teachers on CaisenHigh <br>
+**Alpha** <br>
+Defended!! This Tool will be Archived soon at the end of 2026, we will try applying updates and features for Desktop version
 **NOTE:** if you see the code looks unhinged, ignore it we just copy and paste some parts at stackoverflow and paste what things will work there
 ## Key features
 
