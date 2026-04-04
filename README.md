@@ -1,4 +1,4 @@
-# QRttendX on Destkop 
+# QRttendX
 **QRttendX on Desktop** Is an Web app that let you record attendance via QR Code without a hastle by reducing the use of traditional way of recoding Student's attendance  
 
 ---
