@@ -1,11 +1,11 @@
 # QRttendX
-**QRttendX on Desktop** Is an Web app that let you record attendance via QR Code without a hastle by reducing the use of traditional way of recoding Student's attendance  
+**QRttendX** Is an Web app that let you record attendance via QR Code without a hastle by reducing the use of traditional way of recoding Student's attendance  
 
 ---
 
 ## Status
 **Alpha** <br>
- This tool is now a public archive, we will no longer applying bugs and fixes<br>
+ <br>
 **NOTE:** if you see the code looks unhinged, ignore it we just copy and paste some parts at stackoverflow and paste what things will work there
 ## Key features
 
