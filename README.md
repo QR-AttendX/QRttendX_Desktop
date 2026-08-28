@@ -6,12 +6,9 @@
 ## Status
 **Alpha** <br>
  <br>
-**NOTE:** if you see the code looks unhinged, ignore it we just copy and paste some parts at stackoverflow and paste what things will work there
-## Key features
+**NOTE:** The program is not been documented
 
 - Electron-based desktop web app made purely on vanilla JavaScript.
-- Attendance Records saved in the local storage
-- Downloadable Attendance Record on time
-- etc.
+
 
 
